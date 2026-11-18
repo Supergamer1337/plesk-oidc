@@ -1,0 +1,10 @@
+parameters:
+    level: max
+    phpVersion: 80400
+    paths:
+        - src
+    fileExtensions:
+        - php
+        - phtml
+    universalObjectCratesClasses:
+        - Zend_View_Interface

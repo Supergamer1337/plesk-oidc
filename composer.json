@@ -1,0 +1,41 @@
+{
+    "name": "supergamer1337/plesk-oidc",
+    "description": "Plesk extension for admin login through an OIDC provider",
+    "type": "project",
+    "require": {
+        "php": "^8.4"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.3",
+        "plesk/pm-api-stubs": "^18.0"
+    },
+    "config": {
+        "sort-packages": true,
+        "process-timeout": 0
+    },
+    "scripts": {
+        "lint": [
+            "find src -name '*.php' -o -name '*.phtml' | xargs -n1 php -l > /dev/null",
+            "phpstan analyse --no-progress"
+        ],
+        "up": [
+            "docker compose up -d --wait",
+            "timeout 120 sh -c 'until docker compose exec -T plesk curl -fs -o /dev/null http://localhost:${IDP_PORT:-8080}/default/.well-known/openid-configuration; do sleep 2; done'"
+        ],
+        "down": "docker compose down --volumes --remove-orphans",
+        "deploy": [
+            "docker compose exec -T plesk rm -rf /tmp/plesk-oidc /tmp/plesk-oidc.zip",
+            "docker compose cp src/. plesk:/tmp/plesk-oidc",
+            "docker compose exec -T -w /tmp/plesk-oidc plesk zip -qr /tmp/plesk-oidc.zip .",
+            "docker compose exec -T plesk plesk bin extension --upgrade /tmp/plesk-oidc.zip"
+        ],
+        "login": "link=$(docker compose exec -T plesk plesk login admin | head -n1) && echo \"https://localhost:${PLESK_PORT:-8443}/login?secret=${link#*secret=}\""
+    },
+    "scripts-descriptions": {
+        "lint": "PHP syntax check and PHPStan",
+        "up": "Start Plesk and the mock OIDC provider",
+        "down": "Delete the Plesk stack",
+        "deploy": "Install or upgrade src/ as an extension in the running Plesk",
+        "login": "Print a one time admin login URL for the panel"
+    }
+}
