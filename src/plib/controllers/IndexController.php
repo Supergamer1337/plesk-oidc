@@ -22,7 +22,7 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('text', 'issuer', [
             'label' => 'Issuer URL',
-            'description' => 'Copy exactly from the provider, including any trailing slash.',
+            'description' => 'Copy exactly from the provider.',
             'value' => pm_Settings::get('issuer'),
             'required' => true,
             'filters' => ['StringTrim'],
