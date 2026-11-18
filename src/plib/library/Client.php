@@ -1,0 +1,88 @@
+<?php
+
+use Jumbojett\OpenIDConnectClient;
+use Jumbojett\OpenIDConnectClientException;
+
+class Modules_PleskOidc_Client extends OpenIDConnectClient
+{
+    public const string CALLBACK_PATH = '/modules/plesk-oidc/public/login.php';
+
+    private const int FLOW_LIFETIME = 600;
+
+    public function __construct(string $issuer, string $clientId, string $clientSecret, string $host)
+    {
+        parent::__construct($issuer, $clientId, $clientSecret);
+        $this->setRedirectURL('https://' . $host . self::CALLBACK_PATH);
+        $this->setCodeChallengeMethod('S256');
+        $this->addScope(['profile', 'email']);
+    }
+
+    /**
+     * The library compares the state only after it has redeemed the code.
+     *
+     * @param array<string> $headers
+     */
+    protected function requestTokens(string $code, array $headers = []): mixed
+    {
+        if (!isset($_REQUEST['state']) || $_REQUEST['state'] !== $this->getState()) {
+            throw new OpenIDConnectClientException('Unable to determine state');
+        }
+
+        return parent::requestTokens($code, $headers);
+    }
+
+    /**
+     * The library accepts an ID token that has no nonce or no expiry.
+     *
+     * @param object $claims
+     */
+    protected function verifyJWTClaims($claims, ?string $accessToken = null): bool
+    {
+        return isset($claims->nonce, $claims->exp) && parent::verifyJWTClaims($claims, $accessToken);
+    }
+
+    protected function startSession(): void
+    {
+    }
+
+    protected function commitSession(): void
+    {
+    }
+
+    /**
+     * Plesk keeps no PHP session for anonymous visitors, so the flow state lives in cookies.
+     * The __Host- prefix stops other hosts of the same site from planting them.
+     */
+    protected function getSessionKey(string $key): string|false
+    {
+        $value = $_COOKIE['__Host-' . $key] ?? false;
+
+        return is_string($value) ? $value : false;
+    }
+
+    /**
+     * @param string $value
+     */
+    protected function setSessionKey(string $key, $value): void
+    {
+        $this->setCookie($key, $value, time() + self::FLOW_LIFETIME);
+        $_COOKIE['__Host-' . $key] = $value;
+    }
+
+    protected function unsetSessionKey(string $key): void
+    {
+        $this->setCookie($key, '', 1);
+        unset($_COOKIE['__Host-' . $key]);
+    }
+
+    private function setCookie(string $key, string $value, int $expires): void
+    {
+        setcookie('__Host-' . $key, $value, [
+            'expires' => $expires,
+            'path' => '/',
+            'secure' => true,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+}

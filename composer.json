@@ -14,8 +14,9 @@
         "process-timeout": 0
     },
     "scripts": {
+        "post-install-cmd": "@composer install --working-dir=src/plib --no-interaction --no-progress",
         "lint": [
-            "find src -name '*.php' -o -name '*.phtml' | xargs -n1 php -l > /dev/null",
+            "find src -path src/plib/vendor -prune -o -name '*.php' -print -o -name '*.phtml' -print | xargs -n1 php -l > /dev/null",
             "phpstan analyse --no-progress"
         ],
         "up": [
