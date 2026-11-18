@@ -5,7 +5,9 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: composer
-    directory: /
+    directories:
+      - /
+      - /src/plib
     schedule:
       interval: weekly
   - package-ecosystem: docker-compose

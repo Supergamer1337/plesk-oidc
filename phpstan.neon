@@ -3,8 +3,18 @@ parameters:
     phpVersion: 80400
     paths:
         - src
+    excludePaths:
+        analyse:
+            - src/plib/vendor
+    bootstrapFiles:
+        - src/plib/vendor/autoload.php
     fileExtensions:
         - php
         - phtml
     universalObjectCratesClasses:
         - Zend_View_Interface
+    ignoreErrors:
+        # sdk.php is on the include path of the Plesk runtime.
+        -
+            identifier: requireOnce.fileNotFound
+            path: src/htdocs/public/login.php

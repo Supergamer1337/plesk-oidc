@@ -1,1 +1,16 @@
-<p>The Plesk OIDC extension is installed.</p>
+<?php
+/** @var Zend_View_Interface $this */
+?>
+<?= $this->form instanceof pm_Form_Simple ? $this->form : '' ?>
+<span id="identityClaim-help" class="icon-help-muted" tabindex="0">
+    <span class="tooltipData">
+        This is usually preferred_username. The value must be a valid Plesk login of at most 20 characters.
+    </span>
+</span>
+<script>
+    (() => {
+        const help = document.getElementById('identityClaim-help');
+        document.querySelector('label[for=identityClaim]').after(' ', help);
+        Jsw.Tooltip.initData(help);
+    })();
+</script>

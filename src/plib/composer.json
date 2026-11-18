@@ -1,0 +1,12 @@
+{
+    "name": "supergamer1337/plesk-oidc-runtime",
+    "description": "Runtime dependencies shipped inside the Plesk OIDC extension",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "jumbojett/openid-connect-php": "^1.0.2"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
