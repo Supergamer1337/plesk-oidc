@@ -13,8 +13,6 @@ class IndexController extends pm_Controller_Action
         }
 
         $redirectUri = 'https://' . $request->getHttpHost() . Modules_PleskOidc_Client::CALLBACK_PATH;
-        $hasSecret = pm_Settings::get('clientSecret') !== null;
-
         $form = new pm_Form_Simple();
         $form->addElement('text', 'issuer', [
             'label' => 'Issuer URL',
@@ -23,7 +21,7 @@ class IndexController extends pm_Controller_Action
             'filters' => ['StringTrim'],
             'validators' => [
                 ['Regex', true, [
-                    'pattern' => '#^(https://|http://(localhost|127\.0\.0\.1)[:/])\S+$#',
+                    'pattern' => Modules_PleskOidc_Client::URL_PATTERN,
                     'messages' => ['regexNotMatch' => 'The issuer must be an https:// URL.'],
                 ]],
             ],
@@ -37,8 +35,7 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('password', 'clientSecret', [
             'label' => 'Client secret',
-            'description' => $hasSecret ? 'Leave empty to keep the stored secret.' : '',
-            'required' => !$hasSecret,
+            'required' => true,
         ]);
         $form->addElement('text', 'usernameClaim', [
             'label' => 'Username claim',
@@ -53,9 +50,7 @@ class IndexController extends pm_Controller_Action
             pm_Settings::set('issuer', self::value($form, 'issuer'));
             pm_Settings::set('clientId', self::value($form, 'clientId'));
             pm_Settings::set('usernameClaim', self::value($form, 'usernameClaim'));
-            if (self::value($form, 'clientSecret') !== '') {
-                pm_Settings::setEncrypted('clientSecret', self::value($form, 'clientSecret'));
-            }
+            pm_Settings::setEncrypted('clientSecret', self::value($form, 'clientSecret'));
 
             $this->_status->addInfo('The settings were saved.');
             $json = $this->_helper->getHelper('json');

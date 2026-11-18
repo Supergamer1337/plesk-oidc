@@ -7,6 +7,9 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
 {
     public const string CALLBACK_PATH = '/modules/plesk-oidc/public/login.php';
 
+    // Plain HTTP is only for a provider on the same machine, as in the development stack.
+    public const string URL_PATTERN = '#^(https://|http://(localhost|127\.0\.0\.1)[:/])\S+$#';
+
     private const int FLOW_LIFETIME = 600;
 
     public function __construct(string $issuer, string $clientId, string $clientSecret, string $host)
@@ -46,6 +49,20 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
         return is_string($claims->nonce ?? null)
             && isset($claims->exp)
             && parent::verifyJWTClaims($claims, $accessToken);
+    }
+
+    /**
+     * Discovery can name endpoints that are not HTTPS, and these requests carry the client secret.
+     *
+     * @param array<string> $headers
+     */
+    protected function fetchURL(string $url, ?string $post_body = null, array $headers = []): string|bool
+    {
+        if (preg_match(self::URL_PATTERN, $url) !== 1) {
+            throw new OpenIDConnectClientException('Refusing a provider URL that is not HTTPS');
+        }
+
+        return parent::fetchURL($url, $post_body, $headers);
     }
 
     protected function startSession(): void
