@@ -4,6 +4,9 @@ require_once 'sdk.php';
 pm_Context::init('plesk-oidc');
 
 try {
+    // The library reads $_REQUEST, which in Plesk also holds cookies.
+    $_REQUEST = $_GET;
+
     $host = $_SERVER['HTTP_HOST'] ?? null;
     $ip = $_SERVER['REMOTE_ADDR'] ?? null;
     if (!is_string($host) || !is_string($ip)) {

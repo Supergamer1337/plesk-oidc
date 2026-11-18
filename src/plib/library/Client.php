@@ -14,31 +14,38 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
         parent::__construct($issuer, $clientId, $clientSecret);
         $this->setRedirectURL('https://' . $host . self::CALLBACK_PATH);
         $this->setCodeChallengeMethod('S256');
+        // The library skips PKCE unless the provider advertises it, and many that support it do not.
+        $this->providerConfigParam(['code_challenge_methods_supported' => ['S256']]);
         $this->addScope(['profile', 'email']);
     }
 
     /**
-     * The library compares the state only after it has redeemed the code.
+     * The library redeems the code before it compares the state, and without a verifier if none is stored.
      *
      * @param array<string> $headers
      */
     protected function requestTokens(string $code, array $headers = []): mixed
     {
-        if (!isset($_REQUEST['state']) || $_REQUEST['state'] !== $this->getState()) {
+        if (!isset($_REQUEST['state']) || $_REQUEST['state'] !== $this->getState() || !$this->getCodeVerifier()) {
             throw new OpenIDConnectClientException('Unable to determine state');
         }
 
-        return parent::requestTokens($code, $headers);
+        $tokens = parent::requestTokens($code, $headers);
+        $this->unsetCodeVerifier();
+
+        return $tokens;
     }
 
     /**
-     * The library accepts an ID token that has no nonce or no expiry.
+     * The library accepts an ID token that has no expiry, or whose nonce is absent or not a string.
      *
      * @param object $claims
      */
     protected function verifyJWTClaims($claims, ?string $accessToken = null): bool
     {
-        return isset($claims->nonce, $claims->exp) && parent::verifyJWTClaims($claims, $accessToken);
+        return is_string($claims->nonce ?? null)
+            && isset($claims->exp)
+            && parent::verifyJWTClaims($claims, $accessToken);
     }
 
     protected function startSession(): void
