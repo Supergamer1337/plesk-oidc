@@ -25,7 +25,8 @@ class Modules_PleskOidc_Admin
         $session->data->user_ip = base64_encode($ip);
         $session->data->source_server = '';
 
-        $result = pm_ApiRpc::getService()->call($request)->server->create_session->result;
+        $response = pm_ApiRpc::getService()->call($request);
+        $result = $response->server->create_session->result;
         $id = (string) $result->id;
         if ((string) $result->status !== 'ok' || $id === '') {
             throw new pm_Exception('Plesk refused to create a session: ' . $result->errtext);
