@@ -10,7 +10,7 @@ class Modules_PleskOidc_Admin
     {
         // Plesk limits these logins to 20 characters. The first character keeps it from being read as a CLI option.
         if (!is_string($login) || preg_match('/^[A-Za-z0-9][A-Za-z0-9._@-]{0,19}$/D', $login) !== 1) {
-            throw new pm_Exception('The username claim is not a valid Plesk login');
+            throw new pm_Exception('The identity claim is not a valid Plesk login');
         }
 
         // create_session accepts any Plesk login, so make sure this one is an additional administrator.

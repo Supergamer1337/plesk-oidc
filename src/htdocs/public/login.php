@@ -23,7 +23,7 @@ try {
     $client->authenticate();
 
     $sessionId = Modules_PleskOidc_Admin::createSession(
-        $client->getVerifiedClaims((string) pm_Settings::get('usernameClaim')),
+        $client->getVerifiedClaims((string) pm_Settings::get('identityClaim')),
         $ip,
     );
 

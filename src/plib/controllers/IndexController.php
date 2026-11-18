@@ -14,10 +14,18 @@ class IndexController extends pm_Controller_Action
 
         $redirectUri = 'https://' . $request->getHttpHost() . Modules_PleskOidc_Client::CALLBACK_PATH;
         $form = new pm_Form_Simple();
+        $form->addElement('text', 'redirectUri', [
+            'label' => 'Redirect URI',
+            'description' => 'Register this as the redirect URI of the client at the provider.',
+            'value' => $redirectUri,
+            'disabled' => 'disabled',
+            'class' => 'f-max-size',
+        ]);
         $form->addElement('text', 'issuer', [
             'label' => 'Issuer URL',
             'description' => 'Exactly as the provider reports it, including any trailing slash.',
             'value' => pm_Settings::get('issuer'),
+            'class' => 'f-max-size',
             'required' => true,
             'filters' => ['StringTrim'],
             'validators' => [
@@ -29,7 +37,6 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('text', 'clientId', [
             'label' => 'Client ID',
-            'description' => 'Register ' . $redirectUri . ' as the redirect URI of this client.',
             'value' => pm_Settings::get('clientId'),
             'required' => true,
             'filters' => ['StringTrim'],
@@ -38,10 +45,10 @@ class IndexController extends pm_Controller_Action
             'label' => 'Client secret',
             'required' => true,
         ]);
-        $form->addElement('text', 'usernameClaim', [
-            'label' => 'Username claim',
+        $form->addElement('text', 'identityClaim', [
+            'label' => 'Identity claim',
             'description' => 'The ID token claim that becomes the Plesk login of the administrator.',
-            'value' => pm_Settings::get('usernameClaim', 'preferred_username'),
+            'value' => pm_Settings::get('identityClaim', 'preferred_username'),
             'required' => true,
             'filters' => ['StringTrim'],
         ]);
@@ -50,7 +57,7 @@ class IndexController extends pm_Controller_Action
         if ($request->isPost() && $form->isValid($_POST)) {
             pm_Settings::set('issuer', self::value($form, 'issuer'));
             pm_Settings::set('clientId', self::value($form, 'clientId'));
-            pm_Settings::set('usernameClaim', self::value($form, 'usernameClaim'));
+            pm_Settings::set('identityClaim', self::value($form, 'identityClaim'));
             pm_Settings::setEncrypted('clientSecret', self::value($form, 'clientSecret'));
 
             $this->_status->addInfo('The settings were saved.');
