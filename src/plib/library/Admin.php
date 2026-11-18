@@ -8,7 +8,8 @@ class Modules_PleskOidc_Admin
      */
     public static function createSession(mixed $login, string $ip): string
     {
-        // Plesk limits these logins to 20 characters. The first character keeps it from being read as a CLI option.
+        // Plesk refuses logins longer than 20 characters.
+        // A leading dash could be read as an option of admin_alias.
         if (!is_string($login) || preg_match('/^[A-Za-z0-9][A-Za-z0-9._@-]{0,19}$/D', $login) !== 1) {
             throw new pm_Exception('The identity claim is not a valid Plesk login');
         }
