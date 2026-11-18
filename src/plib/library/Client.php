@@ -101,13 +101,14 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
         }
     }
 
-    // The library must not start a PHP session. Plesk owns the session of this request.
     protected function startSession(): void
     {
+        // Prevents the library base class from creating PHP sessions that won't work inside Plesk
     }
 
     protected function commitSession(): void
     {
+        // Prevents the library base class from creating PHP sessions that won't work inside Plesk
     }
 
     /**
