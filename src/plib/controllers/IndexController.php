@@ -16,6 +16,7 @@ class IndexController extends pm_Controller_Action
         $form = new pm_Form_Simple();
         $form->addElement('text', 'issuer', [
             'label' => 'Issuer URL',
+            'description' => 'Exactly as the provider reports it, including any trailing slash.',
             'value' => pm_Settings::get('issuer'),
             'required' => true,
             'filters' => ['StringTrim'],
