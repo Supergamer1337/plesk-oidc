@@ -19,7 +19,7 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
         $this->setIssuerValidator(static fn (string $iss): bool => $iss === $issuer);
         $this->setRedirectURL('https://' . $host . self::CALLBACK_PATH);
         $this->setCodeChallengeMethod('S256');
-        // The library skips PKCE unless the provider advertises it, and many that support it do not.
+        // The library skips PKCE unless the provider advertises it.
         $this->providerConfigParam(['code_challenge_methods_supported' => ['S256']]);
         $this->addScope(['profile', 'email']);
     }
