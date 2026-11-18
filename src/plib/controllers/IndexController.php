@@ -28,7 +28,7 @@ class IndexController extends pm_Controller_Action
             'filters' => ['StringTrim'],
             'validators' => [
                 ['Regex', true, [
-                    'pattern' => Modules_PleskOidc_Client::URL_PATTERN,
+                    'pattern' => Modules_PleskOidc_Client::urlPattern(),
                     'messages' => ['regexNotMatch' => 'The issuer must be an https:// URL.'],
                 ]],
             ],

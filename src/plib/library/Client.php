@@ -7,9 +7,6 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
 {
     public const string CALLBACK_PATH = '/modules/plesk-oidc/public/login.php';
 
-    // Plain HTTP is only for a provider on the same machine, as in the development stack.
-    public const string URL_PATTERN = '#^(https://\S+|http://(localhost|127\.0\.0\.1)(:\d+)?(/\S*)?)$#D';
-
     private const int FLOW_LIFETIME = 600;
 
     public function __construct(string $issuer, string $clientId, string $clientSecret, string $host)
@@ -91,9 +88,15 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
         parent::redirect($url);
     }
 
+    public static function urlPattern(): string
+    {
+        // Plain HTTP must be enabled in panel.ini. It is meant for the development stack.
+        return pm_Config::get('allowInsecureHttp') === '1' ? '#^https?://\S+$#D' : '#^https://\S+$#D';
+    }
+
     private static function requireSecure(string $url): void
     {
-        if (preg_match(self::URL_PATTERN, $url) !== 1) {
+        if (preg_match(self::urlPattern(), $url) !== 1) {
             throw new OpenIDConnectClientException('The provider uses a URL that is not HTTPS');
         }
     }

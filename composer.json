@@ -21,6 +21,7 @@
         ],
         "up": [
             "docker compose up -d --wait",
+            "docker compose cp panel.dev.ini plesk:/usr/local/psa/admin/conf/panel.ini",
             "timeout 120 sh -c 'until docker compose exec -T plesk curl -fs -o /dev/null http://localhost:${IDP_PORT:-8080}/default/.well-known/openid-configuration; do sleep 2; done'"
         ],
         "down": "docker compose down --volumes --remove-orphans",
