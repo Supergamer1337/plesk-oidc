@@ -16,16 +16,14 @@ class IndexController extends pm_Controller_Action
         $form = new pm_Form_Simple();
         $form->addElement('text', 'redirectUri', [
             'label' => 'Redirect URI',
-            'description' => 'Register this as the redirect URI of the client at the provider.',
+            'description' => 'Register this as the redirect URI of the client.',
             'value' => $redirectUri,
             'disabled' => 'disabled',
-            'class' => 'f-max-size',
         ]);
         $form->addElement('text', 'issuer', [
             'label' => 'Issuer URL',
             'description' => 'Exactly as the provider reports it, including any trailing slash.',
             'value' => pm_Settings::get('issuer'),
-            'class' => 'f-max-size',
             'required' => true,
             'filters' => ['StringTrim'],
             'validators' => [
@@ -52,6 +50,12 @@ class IndexController extends pm_Controller_Action
             'required' => true,
             'filters' => ['StringTrim'],
         ]);
+        $form->addDisplayGroup(['redirectUri'], 'plesk', ['legend' => 'Copy to the provider']);
+        $form->addDisplayGroup(
+            ['issuer', 'clientId', 'clientSecret', 'identityClaim'],
+            'provider',
+            ['legend' => 'Provider settings'],
+        );
         $form->addControlButtons(['cancelLink' => pm_Context::getModulesListUrl()]);
 
         if ($request->isPost() && $form->isValid($_POST)) {
