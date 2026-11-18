@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<module>
+  <id>plesk-oidc</id>
+  <name>Plesk OIDC</name>
+  <description>Log in to Plesk as an administrator through an OpenID Connect provider.</description>
+  <category>auth</category>
+  <version>0.1.0</version>
+  <release>1</release>
+  <vendor>Supergamer1337</vendor>
+  <url>https://github.com/Supergamer1337/plesk-oidc</url>
+  <plesk_min_version>18.0.82</plesk_min_version>
+</module>
