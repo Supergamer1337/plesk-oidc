@@ -8,7 +8,7 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
     public const string CALLBACK_PATH = '/modules/plesk-oidc/public/login.php';
 
     // Plain HTTP is only for a provider on the same machine, as in the development stack.
-    public const string URL_PATTERN = '#^(https://|http://(localhost|127\.0\.0\.1)[:/])\S+$#';
+    public const string URL_PATTERN = '#^(https://\S+|http://(localhost|127\.0\.0\.1)(:\d+)?(/\S*)?)$#D';
 
     private const int FLOW_LIFETIME = 600;
 
@@ -52,17 +52,48 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
     }
 
     /**
-     * Discovery can name endpoints that are not HTTPS, and these requests carry the client secret.
+     * Replaces the library transport, which follows redirects and accepts endpoints that are not HTTPS.
+     * These requests carry the client secret and fetch the keys that ID tokens are checked against.
      *
      * @param array<string> $headers
      */
-    protected function fetchURL(string $url, ?string $post_body = null, array $headers = []): string|bool
+    protected function fetchURL(string $url, ?string $post_body = null, array $headers = []): string
     {
-        if (preg_match(self::URL_PATTERN, $url) !== 1) {
-            throw new OpenIDConnectClientException('Refusing a provider URL that is not HTTPS');
+        self::requireSecure($url);
+
+        $curl = curl_init($url);
+        if ($curl === false) {
+            throw new OpenIDConnectClientException('Unable to start a request to the provider');
+        }
+        curl_setopt_array($curl, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_TIMEOUT => $this->getTimeout(),
+            CURLOPT_HTTPHEADER => array_values($headers),
+        ]);
+        if ($post_body !== null) {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $post_body);
         }
 
-        return parent::fetchURL($url, $post_body, $headers);
+        $response = curl_exec($curl);
+        if (!is_string($response)) {
+            throw new OpenIDConnectClientException('Request to the provider failed: ' . curl_error($curl));
+        }
+
+        return $response;
+    }
+
+    public function redirect(string $url): void
+    {
+        self::requireSecure($url);
+        parent::redirect($url);
+    }
+
+    private static function requireSecure(string $url): void
+    {
+        if (preg_match(self::URL_PATTERN, $url) !== 1) {
+            throw new OpenIDConnectClientException('The provider uses a URL that is not HTTPS');
+        }
     }
 
     protected function startSession(): void
