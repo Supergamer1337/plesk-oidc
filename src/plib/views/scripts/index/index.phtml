@@ -2,3 +2,15 @@
 /** @var Zend_View_Interface $this */
 ?>
 <?= $this->form instanceof pm_Form_Simple ? $this->form : '' ?>
+<span id="identityClaim-help" class="icon-help-muted" tabindex="0">
+    <span class="tooltipData">
+        This is usually one of preferred_username or email, other claims can also be used.
+    </span>
+</span>
+<script>
+    (() => {
+        const help = document.getElementById('identityClaim-help');
+        document.querySelector('label[for=identityClaim]').after(' ', help);
+        Jsw.Tooltip.initData(help);
+    })();
+</script>
