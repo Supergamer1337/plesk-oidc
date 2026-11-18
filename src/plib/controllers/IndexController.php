@@ -22,7 +22,7 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('text', 'issuer', [
             'label' => 'Issuer URL',
-            'description' => 'Exactly as the provider reports it, including any trailing slash.',
+            'description' => 'Copy exactly from the provider, including any trailing slash.',
             'value' => pm_Settings::get('issuer'),
             'required' => true,
             'filters' => ['StringTrim'],
@@ -45,12 +45,12 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('text', 'identityClaim', [
             'label' => 'Identity claim',
-            'description' => 'The ID token claim that becomes the Plesk login of the administrator.',
+            'description' => 'The claim used to infer the Plesk account.',
             'value' => pm_Settings::get('identityClaim', 'preferred_username'),
             'required' => true,
             'filters' => ['StringTrim'],
         ]);
-        $form->addDisplayGroup(['redirectUri'], 'plesk', ['legend' => 'Copy to the provider']);
+        $form->addDisplayGroup(['redirectUri'], 'plesk', ['legend' => 'Client registration']);
         $form->addDisplayGroup(
             ['issuer', 'clientId', 'clientSecret', 'identityClaim'],
             'provider',
