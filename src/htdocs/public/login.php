@@ -24,6 +24,7 @@ try {
 
     $sessionId = Modules_PleskOidc_Admin::createSession(
         $client->getVerifiedClaims((string) pm_Settings::get('identityClaim')),
+        $client->getVerifiedClaims('email'),
         $ip,
     );
 

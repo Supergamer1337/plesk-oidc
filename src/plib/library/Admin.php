@@ -5,18 +5,23 @@ class Modules_PleskOidc_Admin
     /**
      * Returns the id of a new panel session for the additional administrator with this login.
      * The account is created when it does not exist yet.
+     * Its email follows the email claim when the provider sends a valid one.
      */
-    public static function createSession(mixed $login, string $ip): string
+    public static function createSession(mixed $login, mixed $email, string $ip): string
     {
         // Plesk refuses logins longer than 20 characters.
         // A leading dash could be read as an option of admin_alias.
         if (!is_string($login) || preg_match('/^[A-Za-z0-9][A-Za-z0-9._@-]{0,19}$/D', $login) !== 1) {
             throw new pm_Exception('The identity claim is not a valid Plesk login');
         }
+        $email = is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false ? $email : null;
 
         // create_session accepts any Plesk login, so make sure this one is an additional administrator.
         if (pm_ApiCli::call('admin_alias', ['--info', $login], pm_ApiCli::RESULT_CODE) !== 0) {
-            self::create($login);
+            // Plesk requires an email on every account.
+            self::create($login, $email ?? 'noreply@oidc.invalid');
+        } elseif ($email !== null) {
+            pm_ApiCli::call('admin_alias', ['--update', $login, '-email', $email]);
         }
 
         $request = new SimpleXMLElement('<packet><server><create_session/></server></packet>');
@@ -35,7 +40,7 @@ class Modules_PleskOidc_Admin
         return $id;
     }
 
-    private static function create(string $login): void
+    private static function create(string $login, string $email): void
     {
         pm_ApiCli::call(
             'admin_alias',
@@ -43,8 +48,7 @@ class Modules_PleskOidc_Admin
                 '--create', $login,
                 '-passwd', '',
                 '-contact', $login,
-                // A real address would let the user reset the password by mail and bypass the provider.
-                '-email', 'noreply@oidc.invalid',
+                '-email', $email,
             ],
             pm_ApiCli::RESULT_EXCEPTION,
             ['PSA_PASSWORD' => base64_encode(random_bytes(32))],
