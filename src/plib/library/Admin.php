@@ -15,7 +15,8 @@ class Modules_PleskOidc_Admin
 
         $uuid = pm_Settings::get($key);
         $alias = $uuid === null ? null : self::login($uuid);
-        if ($alias === null) {
+        $created = $alias === null;
+        if ($created) {
             pm_Settings::set($key, null);
             // Plesk refuses logins longer than 20 characters.
             // A leading dash could be read as an option of admin_alias.
@@ -40,6 +41,11 @@ class Modules_PleskOidc_Admin
         if (preg_match('/[?&]secret=([A-Za-z0-9_-]+)/', $stdout, $match) !== 1) {
             throw new pm_Exception('Plesk returned no login link');
         }
+        // Plesk drops log levels below error by default.
+        pm_Log::err('OIDC login succeeded: ' . json_encode(
+            ['login' => $alias, 'iss' => $issuer, 'sub' => $subject, 'created' => $created],
+            JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_SLASHES,
+        ));
 
         return '/login?secret=' . $match[1];
     }

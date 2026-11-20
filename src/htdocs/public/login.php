@@ -30,7 +30,7 @@ try {
     );
     header('Location: ' . $link);
 } catch (Throwable $e) {
-    pm_Log::err('OIDC login failed: ' . json_encode($e->getMessage(), JSON_INVALID_UTF8_SUBSTITUTE));
+    pm_Log::err('OIDC login failed: ' . json_encode(substr($e->getMessage(), 0, 500), JSON_INVALID_UTF8_SUBSTITUTE));
     http_response_code(403);
     header('Content-Type: text/plain');
     echo 'Login failed. Ask the Plesk administrator to check the panel log.';
