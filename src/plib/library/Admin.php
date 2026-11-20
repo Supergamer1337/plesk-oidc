@@ -3,10 +3,7 @@
 class Modules_PleskOidc_Admin
 {
     /**
-     * Returns a one time login path for the additional administrator with this login.
-     * The account is created and bound to the issuer and subject when it does not exist yet.
-     * An existing account must be bound to the same issuer and subject.
-     * Its email follows the email claim when the provider sends a valid one.
+     * Returns a one time login path for the additional administrator of this OIDC user.
      */
     public static function createLoginLink(mixed $issuer, mixed $subject, mixed $login, mixed $email): string
     {
