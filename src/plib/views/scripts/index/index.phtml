@@ -12,5 +12,21 @@
         const help = document.getElementById('identityClaim-help');
         document.querySelector('label[for=identityClaim]').after(' ', help);
         Jsw.Tooltip.initData(help);
+
+        const callbackHost = document.getElementById('callbackHost');
+        const redirectUri = document.getElementById('redirectUri');
+        callbackHost.addEventListener('input', () => {
+            redirectUri.value = callbackHost.value.trim() + <?= json_encode(Modules_PleskOidc_Client::CALLBACK_PATH, JSON_HEX_TAG | JSON_THROW_ON_ERROR) ?>;
+        });
+
+        const reset = document.createElement('button');
+        reset.type = 'button';
+        reset.className = 'btn';
+        reset.textContent = 'Reset to default';
+        reset.addEventListener('click', () => {
+            callbackHost.value = <?= json_encode($this->defaultCallbackHost, JSON_HEX_TAG | JSON_THROW_ON_ERROR) ?>;
+            callbackHost.dispatchEvent(new Event('input'));
+        });
+        callbackHost.after(' ', reset);
     })();
 </script>

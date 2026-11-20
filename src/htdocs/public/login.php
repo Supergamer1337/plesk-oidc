@@ -16,6 +16,12 @@ try {
     // Redirects to the provider and exits unless this request is the callback.
     $client->authenticate();
 
+    $adminGroup = (string) pm_Settings::get('adminGroup');
+    $groups = $client->getVerifiedClaims((string) pm_Settings::get('groupsClaim', 'groups'));
+    if ($adminGroup !== '' && (!is_array($groups) || !in_array($adminGroup, $groups, true))) {
+        throw new pm_Exception('The ID token does not put the user in the admin group');
+    }
+
     $link = Modules_PleskOidc_Admin::createLoginLink(
         $client->getVerifiedClaims('iss'),
         $client->getVerifiedClaims('sub'),
