@@ -9,12 +9,15 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
 
     private const int FLOW_LIFETIME = 600;
 
-    public function __construct(string $issuer, string $clientId, string $clientSecret, string $host)
+    public function __construct(string $issuer, string $clientId, string $clientSecret, string $callbackHost)
     {
+        if (preg_match(self::callbackHostPattern(), $callbackHost) !== 1) {
+            throw new pm_Exception('The callback host is not valid');
+        }
         parent::__construct($issuer, $clientId, $clientSecret);
         // The library also accepts the issuer that the discovery document names.
         $this->setIssuerValidator(static fn (string $iss): bool => $iss === $issuer);
-        $this->setRedirectURL('https://' . $host . self::CALLBACK_PATH);
+        $this->setRedirectURL($callbackHost . self::CALLBACK_PATH);
         $this->setCodeChallengeMethod('S256');
         // The library skips PKCE unless the provider advertises it.
         $this->providerConfigParam(['code_challenge_methods_supported' => ['S256']]);
@@ -90,8 +93,18 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
 
     public static function urlPattern(): string
     {
+        return '#^' . self::scheme() . '://\S+$#D';
+    }
+
+    public static function callbackHostPattern(): string
+    {
+        return '#^' . self::scheme() . '://[A-Za-z0-9.-]+(:[0-9]{1,5})?$#D';
+    }
+
+    private static function scheme(): string
+    {
         // Plain HTTP must be enabled in panel.ini. It is meant for the development stack.
-        return pm_Config::get('allowInsecureHttp') === '1' ? '#^https?://\S+$#D' : '#^https://\S+$#D';
+        return pm_Config::get('allowInsecureHttp') === '1' ? 'https?' : 'https';
     }
 
     private static function requireSecure(string $url): void

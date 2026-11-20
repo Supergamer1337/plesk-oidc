@@ -12,12 +12,25 @@ class IndexController extends pm_Controller_Action
             throw new pm_Exception('Unexpected request type');
         }
 
-        $redirectUri = 'https://' . $request->getHttpHost() . Modules_PleskOidc_Client::CALLBACK_PATH;
+        $callbackHost = pm_Settings::get('callbackHost') ?? 'https://' . $request->getHttpHost();
         $form = new pm_Form_Simple();
+        $form->addElement('text', 'callbackHost', [
+            'label' => 'Callback host',
+            'description' => 'The public URL of the panel, such as https://plesk.example.com:8443.',
+            'value' => $callbackHost,
+            'required' => true,
+            'filters' => ['StringTrim'],
+            'validators' => [
+                ['Regex', true, [
+                    'pattern' => Modules_PleskOidc_Client::callbackHostPattern(),
+                    'messages' => ['regexNotMatch' => 'The callback host must be an https:// URL without a path.'],
+                ]],
+            ],
+        ]);
         $form->addElement('text', 'redirectUri', [
             'label' => 'Redirect URI',
             'description' => 'Register this as the redirect URI of the client.',
-            'value' => $redirectUri,
+            'value' => $callbackHost . Modules_PleskOidc_Client::CALLBACK_PATH,
             'disabled' => 'disabled',
         ]);
         $form->addElement('text', 'issuer', [
@@ -50,7 +63,7 @@ class IndexController extends pm_Controller_Action
             'required' => true,
             'filters' => ['StringTrim'],
         ]);
-        $form->addDisplayGroup(['redirectUri'], 'plesk', ['legend' => 'Client registration']);
+        $form->addDisplayGroup(['callbackHost', 'redirectUri'], 'plesk', ['legend' => 'Client registration']);
         $form->addDisplayGroup(
             ['issuer', 'clientId', 'clientSecret', 'identityClaim'],
             'provider',
@@ -59,6 +72,7 @@ class IndexController extends pm_Controller_Action
         $form->addControlButtons(['cancelLink' => pm_Context::getModulesListUrl()]);
 
         if ($request->isPost() && $form->isValid($_POST)) {
+            pm_Settings::set('callbackHost', self::value($form, 'callbackHost'));
             pm_Settings::set('issuer', self::value($form, 'issuer'));
             pm_Settings::set('clientId', self::value($form, 'clientId'));
             pm_Settings::set('identityClaim', self::value($form, 'identityClaim'));
