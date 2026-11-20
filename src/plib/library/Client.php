@@ -9,6 +9,14 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
 
     private const int FLOW_LIFETIME = 600;
 
+    private const int CACHE_LIFETIME = 300;
+
+    private const int MAX_RESPONSE_SIZE = 1048576;
+
+    private const array SIGNING_ALGORITHMS = ['RS256', 'RS384', 'RS512', 'PS256', 'PS512'];
+
+    private bool $refreshCache = false;
+
     public function __construct(string $issuer, string $clientId, string $clientSecret, string $callbackHost)
     {
         if (preg_match(self::callbackHostPattern(), $callbackHost) !== 1) {
@@ -54,6 +62,33 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
     }
 
     /**
+     * The library also accepts ID tokens signed with the client secret.
+     */
+    public function verifyJWTSignature(string $jwt): bool
+    {
+        $header = $this->decodeJWT($jwt);
+        $alg = is_object($header) ? $header->alg ?? null : null;
+        if (!in_array($alg, self::SIGNING_ALGORITHMS, true)) {
+            throw new OpenIDConnectClientException(
+                'The ID token is signed with ' . (is_string($alg) ? $alg : 'an unknown algorithm')
+                . '. The provider must sign ID tokens with an asymmetric key ('
+                . implode(', ', self::SIGNING_ALGORITHMS) . ')',
+            );
+        }
+
+        try {
+            if (parent::verifyJWTSignature($jwt)) {
+                return true;
+            }
+        } catch (OpenIDConnectClientException) {
+        }
+        // The provider may have rotated its keys since they were cached.
+        $this->refreshCache = true;
+
+        return parent::verifyJWTSignature($jwt);
+    }
+
+    /**
      * Replaces the library transport, which follows redirects and accepts endpoints that are not HTTPS.
      * These requests carry the client secret and fetch the keys that ID tokens are checked against.
      *
@@ -63,23 +98,59 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
     {
         self::requireSecure($url);
 
+        // Only the discovery document and the keys are fetched without a body or headers.
+        $cache = $post_body === null && $headers === [] ? pm_Context::getVarDir() . 'provider-'
+            . hash('sha256', json_encode([$this->getProviderURL(), $url], JSON_THROW_ON_ERROR)) . '.json' : null;
+        if ($cache !== null && !$this->refreshCache && is_file($cache) && filemtime($cache) > time() - self::CACHE_LIFETIME) {
+            $response = file_get_contents($cache);
+            if (is_string($response)) {
+                return $response;
+            }
+        }
+
+        $response = $this->request($url, $post_body, $headers);
+        if ($cache !== null) {
+            $temp = $cache . '.' . bin2hex(random_bytes(8));
+            if (file_put_contents($temp, $response) === false || !rename($temp, $cache)) {
+                throw new OpenIDConnectClientException('Unable to cache the provider response');
+            }
+        }
+
+        return $response;
+    }
+
+    /**
+     * @param array<string> $headers
+     */
+    private function request(string $url, ?string $postBody, array $headers): string
+    {
         $curl = curl_init($url);
         if ($curl === false) {
             throw new OpenIDConnectClientException('Unable to start a request to the provider');
         }
+        $response = '';
         curl_setopt_array($curl, [
-            CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_TIMEOUT => $this->getTimeout(),
             CURLOPT_HTTPHEADER => array_values($headers),
+            CURLOPT_WRITEFUNCTION => static function (CurlHandle $curl, string $data) use (&$response): int {
+                $response .= $data;
+
+                return strlen($response) > self::MAX_RESPONSE_SIZE ? 0 : strlen($data);
+            },
         ]);
-        if ($post_body !== null) {
-            curl_setopt($curl, CURLOPT_POSTFIELDS, $post_body);
+        if ($postBody !== null) {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $postBody);
         }
 
-        $response = curl_exec($curl);
-        if (!is_string($response)) {
-            throw new OpenIDConnectClientException('Request to the provider failed: ' . curl_error($curl));
+        if (curl_exec($curl) === false) {
+            throw new OpenIDConnectClientException(strlen($response) > self::MAX_RESPONSE_SIZE
+                ? 'The provider response from ' . $url . ' is too large'
+                : 'Request to the provider failed: ' . curl_error($curl));
+        }
+        $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        if ($status < 200 || $status > 299) {
+            throw new OpenIDConnectClientException('The provider answered ' . $url . ' with HTTP ' . $status);
         }
 
         return $response;
