@@ -38,8 +38,7 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('text', 'issuer', [
             'label' => 'Issuer URL',
-            'description' => 'Copy exactly from the provider. For Authentik, this is the OpenID Configuration Issuer'
-                . ' on the provider page, https://<host>/application/o/<slug>/ with the trailing slash.',
+            'description' => 'Copy exactly from the provider.',
             'value' => pm_Settings::get('issuer'),
             'class' => 'f-max-size',
             'required' => true,
@@ -86,8 +85,7 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('text', 'adminGroup', [
             'label' => 'Admin group',
-            'description' => 'Only users of this group can log in. Enter the exact group name as it appears'
-                . ' in the groups claim. Case matters.',
+            'description' => 'Only users of this group can log in.',
             'value' => pm_Settings::get('adminGroup'),
             'filters' => ['StringTrim'],
         ]);
