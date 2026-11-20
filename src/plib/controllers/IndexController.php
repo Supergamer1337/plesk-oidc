@@ -14,6 +14,7 @@ class IndexController extends pm_Controller_Action
 
         $this->view->defaultCallbackHost = 'https://' . $request->getHttpHost();
         $callbackHost = pm_Settings::get('callbackHost') ?? $this->view->defaultCallbackHost;
+        $hasSecret = (string) pm_Settings::getDecrypted('clientSecret') !== '';
         $form = new pm_Form_Simple();
         $form->addElement('text', 'callbackHost', [
             'label' => 'Callback host',
@@ -33,11 +34,14 @@ class IndexController extends pm_Controller_Action
             'description' => 'Register this as the redirect URI of the client.',
             'value' => $callbackHost . Modules_PleskOidc_Client::CALLBACK_PATH,
             'disabled' => 'disabled',
+            'class' => 'f-max-size',
         ]);
         $form->addElement('text', 'issuer', [
             'label' => 'Issuer URL',
-            'description' => 'Copy exactly from the provider.',
+            'description' => 'Copy exactly from the provider. For Authentik, this is the OpenID Configuration Issuer'
+                . ' on the provider page, https://<host>/application/o/<slug>/ with the trailing slash.',
             'value' => pm_Settings::get('issuer'),
+            'class' => 'f-max-size',
             'required' => true,
             'filters' => ['StringTrim'],
             'validators' => [
@@ -55,7 +59,16 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('password', 'clientSecret', [
             'label' => 'Client secret',
-            'required' => true,
+            'description' => $hasSecret
+                ? 'Leave empty to keep the stored secret. Enter it again when the issuer or client ID changes.'
+                : '',
+            'required' => !$hasSecret,
+            'validators' => [
+                ['Regex', true, [
+                    'pattern' => '/^\S+$/D',
+                    'messages' => ['regexNotMatch' => 'The client secret must not contain whitespace.'],
+                ]],
+            ],
         ]);
         $form->addElement('text', 'identityClaim', [
             'label' => 'Identity claim',
@@ -73,7 +86,8 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('text', 'adminGroup', [
             'label' => 'Admin group',
-            'description' => 'Only users of this group can log in.',
+            'description' => 'Only users of this group can log in. Enter the exact group name as it appears'
+                . ' in the groups claim. Case matters.',
             'value' => pm_Settings::get('adminGroup'),
             'filters' => ['StringTrim'],
         ]);
@@ -86,14 +100,16 @@ class IndexController extends pm_Controller_Action
         $form->addDisplayGroup(['groupsClaim', 'adminGroup'], 'access', ['legend' => 'Access']);
         $form->addControlButtons(['cancelLink' => pm_Context::getModulesListUrl()]);
 
-        if ($request->isPost() && $form->isValid($_POST)) {
+        if ($request->isPost() && $form->isValid($_POST) && self::checkSecret($form) && self::checkIssuer($form)) {
             pm_Settings::set('callbackHost', self::value($form, 'callbackHost'));
             pm_Settings::set('issuer', self::value($form, 'issuer'));
             pm_Settings::set('clientId', self::value($form, 'clientId'));
             pm_Settings::set('identityClaim', self::value($form, 'identityClaim'));
             pm_Settings::set('groupsClaim', self::value($form, 'groupsClaim'));
             pm_Settings::set('adminGroup', self::value($form, 'adminGroup'));
-            pm_Settings::setEncrypted('clientSecret', self::value($form, 'clientSecret'));
+            if (self::value($form, 'clientSecret') !== '') {
+                pm_Settings::setEncrypted('clientSecret', self::value($form, 'clientSecret'));
+            }
 
             $this->_status->addInfo('The settings were saved.');
             $json = $this->_helper->getHelper('json');
@@ -110,6 +126,37 @@ class IndexController extends pm_Controller_Action
         }
         $this->view->pageTitle = 'Plesk OIDC';
         $this->view->form = $form;
+    }
+
+    /**
+     * The stored secret must not go to another issuer or client.
+     */
+    private static function checkSecret(pm_Form_Simple $form): bool
+    {
+        if (self::value($form, 'clientSecret') !== '' || ((string) pm_Settings::getDecrypted('clientSecret') !== ''
+            && self::value($form, 'issuer') === pm_Settings::get('issuer')
+            && self::value($form, 'clientId') === pm_Settings::get('clientId'))) {
+            return true;
+        }
+        $form->getElement('clientSecret')?->addError('Enter the client secret.');
+
+        return false;
+    }
+
+    private static function checkIssuer(pm_Form_Simple $form): bool
+    {
+        $issuer = self::value($form, 'issuer');
+        try {
+            $found = new Modules_PleskOidc_Client($issuer, '', '', self::value($form, 'callbackHost'))->discoverIssuer();
+            $error = $found === $issuer ? null : 'The provider names its issuer ' . $found . ', not ' . $issuer . '.';
+        } catch (Throwable $e) {
+            $error = 'Unable to read the provider configuration. ' . $e->getMessage();
+        }
+        if ($error !== null) {
+            $form->getElement('issuer')?->addError($error);
+        }
+
+        return $error === null;
     }
 
     private static function value(pm_Form_Simple $form, string $name): string

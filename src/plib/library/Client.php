@@ -89,6 +89,16 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
     }
 
     /**
+     * Returns the issuer that the discovery document names, bypassing the cache.
+     */
+    public function discoverIssuer(): string
+    {
+        $this->refreshCache = true;
+
+        return $this->getWellKnownIssuer();
+    }
+
+    /**
      * Replaces the library transport, which follows redirects and accepts endpoints that are not HTTPS.
      * These requests carry the client secret and fetch the keys that ID tokens are checked against.
      *
