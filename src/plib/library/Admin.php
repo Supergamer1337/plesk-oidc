@@ -3,12 +3,12 @@
 class Modules_PleskOidc_Admin
 {
     /**
-     * Returns the id of a new panel session for the additional administrator with this login.
+     * Returns a one time login path for the additional administrator with this login.
      * The account is created and bound to the issuer and subject when it does not exist yet.
      * An existing account must be bound to the same issuer and subject.
      * Its email follows the email claim when the provider sends a valid one.
      */
-    public static function createSession(mixed $issuer, mixed $subject, mixed $login, mixed $email, string $ip): string
+    public static function createLoginLink(mixed $issuer, mixed $subject, mixed $login, mixed $email): string
     {
         // Plesk refuses logins longer than 20 characters.
         // A leading dash could be read as an option of admin_alias.
@@ -21,7 +21,7 @@ class Modules_PleskOidc_Admin
         $binding = hash('sha256', json_encode([$issuer, $subject], JSON_THROW_ON_ERROR));
         $email = is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false ? $email : null;
 
-        // create_session accepts any Plesk login, so make sure this one is an additional administrator.
+        // Plesk issues login links for any Plesk login, so make sure this one is an additional administrator.
         $uuid = self::uuid($login);
         if ($uuid === null) {
             // Plesk requires an email on every account.
@@ -34,20 +34,13 @@ class Modules_PleskOidc_Admin
             pm_ApiCli::call('admin_alias', ['--update', $login, '-email', $email]);
         }
 
-        $request = new SimpleXMLElement('<packet><server><create_session/></server></packet>');
-        $session = $request->server->create_session;
-        $session->login = $login;
-        $session->data->user_ip = base64_encode($ip);
-        $session->data->source_server = '';
-
-        $response = pm_ApiRpc::getService()->call($request);
-        $result = $response->server->create_session->result;
-        $id = (string) $result->id;
-        if ((string) $result->status !== 'ok' || $id === '') {
-            throw new pm_Exception('Plesk refused to create a session: ' . $result->errtext);
+        $result = pm_ApiCli::call('admin', ['--get-login-link', '-user', $login]);
+        $stdout = is_array($result) && is_string($result['stdout'] ?? null) ? $result['stdout'] : '';
+        if (preg_match('/[?&]secret=([A-Za-z0-9_-]+)/', $stdout, $match) !== 1) {
+            throw new pm_Exception('Plesk returned no login link');
         }
 
-        return $id;
+        return '/login?secret=' . $match[1];
     }
 
     /**
