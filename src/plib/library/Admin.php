@@ -22,13 +22,15 @@ class Modules_PleskOidc_Admin
             if (!is_string($login) || preg_match('/^[A-Za-z0-9][A-Za-z0-9._@-]{0,19}$/D', $login) !== 1) {
                 throw new pm_Exception('The identity claim is not a valid Plesk login');
             }
-            if (self::uuid($login) !== null) {
+            if (self::accounts($login) !== 0) {
                 throw new pm_Exception('The account ' . $login . ' is not bound to this OIDC user');
             }
             // Plesk requires an email on every account.
             self::create($login, $email ?? 'noreply@oidc.invalid');
             pm_Settings::set($key, self::uuid($login) ?? throw new pm_Exception('The new account has no uuid'));
             $alias = $login;
+        } elseif (self::accounts($alias) !== 1) {
+            throw new pm_Exception('Another account has the login ' . $alias);
         } elseif ($email !== null) {
             pm_ApiCli::call('admin_alias', ['--update', $alias, '-email', $email]);
         }
@@ -51,6 +53,20 @@ class Modules_PleskOidc_Admin
         $login = (string) pm_Bootstrap::getDbAdapter()->fetchOne('SELECT login FROM admin_aliases WHERE uuid = ?', [$uuid]);
 
         return $login === '' ? null : $login;
+    }
+
+    /**
+     * Counts the panel accounts of any type with this login.
+     * Plesk lets a mail user take the login of an additional administrator.
+     */
+    private static function accounts(string $login): int
+    {
+        return (int) pm_Bootstrap::getDbAdapter()->fetchOne(
+            'SELECT (SELECT COUNT(*) FROM admin_aliases WHERE LOWER(login) = LOWER(?))'
+            . ' + (SELECT COUNT(*) FROM smb_users WHERE LOWER(login) = LOWER(?))'
+            . ' + (SELECT COUNT(*) FROM clients WHERE LOWER(login) = LOWER(?))',
+            [$login, $login, $login],
+        );
     }
 
     private static function uuid(string $login): ?string
