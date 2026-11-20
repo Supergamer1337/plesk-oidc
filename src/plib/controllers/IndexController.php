@@ -34,13 +34,11 @@ class IndexController extends pm_Controller_Action
             'description' => 'Register this as the redirect URI of the client.',
             'value' => $callbackHost . Modules_PleskOidc_Client::CALLBACK_PATH,
             'disabled' => 'disabled',
-            'class' => 'f-max-size',
         ]);
         $form->addElement('text', 'issuer', [
             'label' => 'Issuer URL',
             'description' => 'Copy exactly from the provider.',
             'value' => pm_Settings::get('issuer'),
-            'class' => 'f-max-size',
             'required' => true,
             'filters' => ['StringTrim'],
             'validators' => [
@@ -58,10 +56,8 @@ class IndexController extends pm_Controller_Action
         ]);
         $form->addElement('password', 'clientSecret', [
             'label' => 'Client secret',
-            'description' => $hasSecret
-                ? 'Leave empty to keep the stored secret. Enter it again when the issuer or client ID changes.'
-                : '',
             'required' => !$hasSecret,
+            ...($hasSecret ? ['placeholder' => '••••••••'] : []),
             'validators' => [
                 ['Regex', true, [
                     'pattern' => '/^\S+$/D',
@@ -136,7 +132,7 @@ class IndexController extends pm_Controller_Action
             && self::value($form, 'clientId') === pm_Settings::get('clientId'))) {
             return true;
         }
-        $form->getElement('clientSecret')?->addError('Enter the client secret.');
+        $form->getElement('clientSecret')?->addError('Enter the client secret again when the issuer or client ID changes.');
 
         return false;
     }
@@ -148,7 +144,7 @@ class IndexController extends pm_Controller_Action
             $found = new Modules_PleskOidc_Client($issuer, '', '', self::value($form, 'callbackHost'))->discoverIssuer();
             $error = $found === $issuer ? null : 'The provider names its issuer ' . $found . ', not ' . $issuer . '.';
         } catch (Throwable $e) {
-            $error = 'Unable to read the provider configuration. ' . $e->getMessage();
+            $error = $e->getMessage();
         }
         if ($error !== null) {
             $form->getElement('issuer')?->addError($error);

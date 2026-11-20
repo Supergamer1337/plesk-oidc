@@ -94,8 +94,11 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
     public function discoverIssuer(): string
     {
         $this->refreshCache = true;
+        $issuer = $this->getWellKnownConfigValue('issuer', '');
 
-        return $this->getWellKnownIssuer();
+        return is_string($issuer) && $issuer !== ''
+            ? $issuer
+            : throw new OpenIDConnectClientException('The provider configuration names no issuer');
     }
 
     /**
