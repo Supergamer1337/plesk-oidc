@@ -24,7 +24,13 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
         }
         parent::__construct($issuer, $clientId, $clientSecret);
         // The library also accepts the issuer that the discovery document names.
-        $this->setIssuerValidator(static fn (string $iss): bool => $iss === $issuer);
+        $this->setIssuerValidator(static function (string $iss) use ($issuer): bool {
+            if ($iss !== $issuer) {
+                throw new OpenIDConnectClientException('The ID token is issued by ' . $iss . ', not by the configured issuer ' . $issuer);
+            }
+
+            return true;
+        });
         $this->setRedirectURL($callbackHost . self::CALLBACK_PATH);
         $this->setCodeChallengeMethod('S256');
         // The library skips PKCE unless the provider advertises it.
@@ -71,7 +77,7 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
         if (!in_array($alg, self::SIGNING_ALGORITHMS, true)) {
             throw new OpenIDConnectClientException(
                 'The ID token is signed with ' . (is_string($alg) ? $alg : 'an unknown algorithm')
-                . '. The provider must sign ID tokens with an asymmetric key ('
+                . '. The provider must sign ID tokens with an RSA key ('
                 . implode(', ', self::SIGNING_ALGORITHMS) . ')',
             );
         }
@@ -150,7 +156,15 @@ class Modules_PleskOidc_Client extends OpenIDConnectClient
         }
         $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
         if ($status < 200 || $status > 299) {
-            throw new OpenIDConnectClientException('The provider answered ' . $url . ' with HTTP ' . $status);
+            $message = 'The provider answered ' . $url . ' with HTTP ' . $status;
+            $error = json_decode($response);
+            if (is_object($error) && is_string($error->error ?? null)) {
+                $message .= ': ' . substr($error->error, 0, 100);
+                if (is_string($error->error_description ?? null)) {
+                    $message .= ' (' . substr($error->error_description, 0, 200) . ')';
+                }
+            }
+            throw new OpenIDConnectClientException($message);
         }
 
         return $response;

@@ -2,6 +2,7 @@
 
 require_once 'sdk.php';
 pm_Context::init('plesk-oidc');
+$client = null;
 
 try {
     // The library reads $_REQUEST, which in Plesk also holds cookies.
@@ -30,7 +31,16 @@ try {
     );
     header('Location: ' . $link);
 } catch (Throwable $e) {
-    pm_Log::err('OIDC login failed: ' . json_encode(substr($e->getMessage(), 0, 500), JSON_INVALID_UTF8_SUBSTITUTE));
+    $user = '';
+    // Claims are only set once the ID token is verified.
+    if ($client instanceof Modules_PleskOidc_Client && is_object($client->getVerifiedClaims())) {
+        $identityClaim = (string) pm_Settings::get('identityClaim');
+        $user = ' ' . substr((string) json_encode(
+            ['sub' => $client->getVerifiedClaims('sub'), $identityClaim => $client->getVerifiedClaims($identityClaim)],
+            JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_SLASHES,
+        ), 0, 500);
+    }
+    pm_Log::err('OIDC login failed: ' . json_encode(substr($e->getMessage(), 0, 500), JSON_INVALID_UTF8_SUBSTITUTE) . $user);
     http_response_code(403);
     header('Content-Type: text/plain');
     echo 'Login failed. Ask the Plesk administrator to check the panel log.';
