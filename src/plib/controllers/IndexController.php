@@ -85,6 +85,37 @@ class IndexController extends pm_Controller_Action
             'value' => pm_Settings::get('adminGroup'),
             'filters' => ['StringTrim'],
         ]);
+        $form->addElement('text', 'loginButtonText', [
+            'label' => 'Text',
+            'value' => pm_Settings::get('loginButtonText', Modules_PleskOidc_LoginButton::DEFAULT_TEXT),
+            'required' => true,
+            'filters' => ['StringTrim'],
+            'validators' => [['StringLength', true, ['max' => 50]]],
+        ]);
+        $form->addElement('text', 'loginButtonColor', [
+            'label' => 'Color',
+            'value' => pm_Settings::get('loginButtonColor', Modules_PleskOidc_LoginButton::DEFAULT_COLOR),
+            'required' => true,
+            'filters' => ['StringTrim'],
+            'validators' => [
+                ['Regex', true, [
+                    'pattern' => Modules_PleskOidc_LoginButton::COLOR_PATTERN,
+                    'messages' => ['regexNotMatch' => 'The color must be a hex color such as #53687b.'],
+                ]],
+            ],
+        ]);
+        $form->addElement('text', 'loginButtonIcon', [
+            'label' => 'Icon URL',
+            'description' => 'An image shown before the text.',
+            'value' => pm_Settings::get('loginButtonIcon'),
+            'filters' => ['StringTrim'],
+            'validators' => [
+                ['Regex', true, [
+                    'pattern' => Modules_PleskOidc_Client::urlPattern(),
+                    'messages' => ['regexNotMatch' => 'The icon URL must be an https:// URL.'],
+                ]],
+            ],
+        ]);
         $form->addDisplayGroup(['callbackHost', 'redirectUri'], 'plesk', ['legend' => 'Client registration']);
         $form->addDisplayGroup(
             ['issuer', 'clientId', 'clientSecret', 'identityClaim'],
@@ -92,6 +123,11 @@ class IndexController extends pm_Controller_Action
             ['legend' => 'Provider settings'],
         );
         $form->addDisplayGroup(['groupsClaim', 'adminGroup'], 'access', ['legend' => 'Access']);
+        $form->addDisplayGroup(
+            ['loginButtonText', 'loginButtonColor', 'loginButtonIcon'],
+            'loginButton',
+            ['legend' => 'Login button'],
+        );
         $form->addControlButtons(['cancelLink' => pm_Context::getModulesListUrl()]);
 
         if ($request->isPost() && $form->isValid($_POST) && self::checkSecret($form) && self::checkIssuer($form)) {
@@ -101,6 +137,9 @@ class IndexController extends pm_Controller_Action
             pm_Settings::set('identityClaim', self::value($form, 'identityClaim'));
             pm_Settings::set('groupsClaim', self::value($form, 'groupsClaim'));
             pm_Settings::set('adminGroup', self::value($form, 'adminGroup'));
+            pm_Settings::set('loginButtonText', self::value($form, 'loginButtonText'));
+            pm_Settings::set('loginButtonColor', self::value($form, 'loginButtonColor'));
+            pm_Settings::set('loginButtonIcon', self::value($form, 'loginButtonIcon'));
             if (self::value($form, 'clientSecret') !== '') {
                 pm_Settings::setEncrypted('clientSecret', self::value($form, 'clientSecret'));
             }

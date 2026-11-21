@@ -8,6 +8,6 @@ class Modules_PleskOidc_LoginContentInclude extends pm_Hook_LoginContentInclude
             return '';
         }
 
-        return '<p><a href="' . Modules_PleskOidc_Client::CALLBACK_PATH . '">Log in with OpenID Connect</a></p>';
+        return Modules_PleskOidc_LoginButton::html();
     }
 }
