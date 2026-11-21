@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@v31
+      - name: Set version in meta.xml from tag
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag $TAG is not in the form vX.Y.Z"
+            exit 1
+          fi
+          sed -i "s|<version>.*</version>|<version>${TAG#v}</version>|" src/meta.xml
+      - run: nix develop -c composer install --working-dir=src/plib --no-dev --no-interaction --no-progress
+      - run: cd src && zip -qr "../plesk-oidc-${TAG#v}.zip" .
+      - run: gh release upload "$TAG" "plesk-oidc-${TAG#v}.zip" --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
