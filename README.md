@@ -29,15 +29,12 @@ Change Callback host if users reach Plesk through a different URL.
 ## Login button
 
 Change the text, color and icon of the button under Login button on the settings page.
-The text turns white or dark to stay readable on the chosen color.
 
 <p>
   <img src="docs/images/login-button-default.png" width="260" alt="Default login button">
   <img src="docs/images/login-button-authentik.png" width="260" alt="Dark login button with the Authentik icon">
   <img src="docs/images/login-button-light.png" width="260" alt="Yellow login button with custom text">
 </p>
-
-The icon is loaded by the browser of each visitor, so host it on a server you trust.
 
 ## How accounts work
 
