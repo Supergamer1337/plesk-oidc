@@ -122,19 +122,15 @@ class IndexController extends pm_Controller_Action
         $this->view->form = $form;
     }
 
-    /**
-     * The stored secret must not go to another issuer or client.
-     */
     private static function checkSecret(pm_Form_Simple $form): bool
     {
-        if (self::value($form, 'clientSecret') !== '' || ((string) pm_Settings::getDecrypted('clientSecret') !== ''
-            && self::value($form, 'issuer') === pm_Settings::get('issuer')
-            && self::value($form, 'clientId') === pm_Settings::get('clientId'))) {
-            return true;
+        $missing = self::value($form, 'clientSecret') === ''
+            && (self::changed($form, 'issuer') || self::changed($form, 'clientId'));
+        if ($missing) {
+            $form->getElement('clientSecret')?->addError('Enter the client secret again when the issuer or client ID changes.');
         }
-        $form->getElement('clientSecret')?->addError('Enter the client secret again when the issuer or client ID changes.');
 
-        return false;
+        return !$missing;
     }
 
     private static function checkIssuer(pm_Form_Simple $form): bool
@@ -151,6 +147,11 @@ class IndexController extends pm_Controller_Action
         }
 
         return $error === null;
+    }
+
+    private static function changed(pm_Form_Simple $form, string $name): bool
+    {
+        return self::value($form, $name) !== pm_Settings::get($name);
     }
 
     private static function value(pm_Form_Simple $form, string $name): string
