@@ -22,9 +22,19 @@ Each user gets a personal Plesk administrator account, created on their first lo
 4. Set Admin group to the group that may log in.
 5. Save.
 
-A Log in with OpenID Connect link now shows on the Plesk login page.
+A Log in with OpenID Connect button now shows under the Plesk login button.
 
 Change Callback host if users reach Plesk through a different URL.
+
+## Login button
+
+Change the text, color and icon of the button under Login button on the settings page.
+
+<p>
+  <img src="docs/images/login-button-default.png" width="260" alt="Default login button">
+  <img src="docs/images/login-button-authentik.png" width="260" alt="Dark login button with the Authentik icon">
+  <img src="docs/images/login-button-light.png" width="260" alt="Yellow login button with custom text">
+</p>
 
 ## How accounts work
 
