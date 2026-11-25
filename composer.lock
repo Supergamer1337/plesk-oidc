@@ -9,11 +9,11 @@
     "packages-dev": [
         {
             "name": "phpstan/phpstan",
-            "version": "2.3.6",
+            "version": "2.3.7",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/00cedebb76cc82c1592414fa4f616cefdccda16f",
-                "reference": "00cedebb76cc82c1592414fa4f616cefdccda16f",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/90c91c2498849ab8cc4e873864bbf1cb2bf6ea12",
+                "reference": "90c91c2498849ab8cc4e873864bbf1cb2bf6ea12",
                 "shasum": ""
             },
             "require": {
@@ -69,8 +69,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-11-15T19:58:26+00:00",
-            "published-time": "2026-11-15T19:58:39+00:00"
+            "time": "2026-11-19T10:31:11+00:00"
         },
         {
             "name": "plesk/pm-api-stubs",
@@ -110,8 +109,7 @@
                 "issues": "https://github.com/plesk/pm-api-stubs/issues",
                 "source": "https://github.com/plesk/pm-api-stubs/tree/18.0.76"
             },
-            "time": "2026-02-18T13:03:53+00:00",
-            "published-time": "2026-02-18T13:13:23+00:00"
+            "time": "2026-02-18T13:03:53+00:00"
         },
         {
             "name": "plesk/zf1",
@@ -161,8 +159,7 @@
             "support": {
                 "source": "https://github.com/plesk/zf1/tree/1.12.17-patch22"
             },
-            "time": "2025-03-19T13:32:52+00:00",
-            "published-time": "2025-03-19T13:33:33+00:00"
+            "time": "2025-03-19T13:32:52+00:00"
         },
         {
             "name": "psr/container",
@@ -210,8 +207,7 @@
                 "issues": "https://github.com/php-fig/container/issues",
                 "source": "https://github.com/php-fig/container/tree/1.1.2"
             },
-            "time": "2021-11-05T16:50:12+00:00",
-            "published-time": "2021-11-05T16:53:52+00:00"
+            "time": "2021-11-05T16:50:12+00:00"
         },
         {
             "name": "psr/http-factory",
@@ -266,8 +262,7 @@
             "support": {
                 "source": "https://github.com/php-fig/http-factory"
             },
-            "time": "2024-04-15T12:06:14+00:00",
-            "published-time": "2024-05-10T07:32:19+00:00"
+            "time": "2024-04-15T12:06:14+00:00"
         },
         {
             "name": "psr/http-message",
@@ -320,8 +315,7 @@
             "support": {
                 "source": "https://github.com/php-fig/http-message/tree/2.0"
             },
-            "time": "2023-04-04T09:54:51+00:00",
-            "published-time": "2023-04-04T09:55:35+00:00"
+            "time": "2023-04-04T09:54:51+00:00"
         },
         {
             "name": "psr/http-server-handler",
@@ -377,8 +371,7 @@
             "support": {
                 "source": "https://github.com/php-fig/http-server-handler/tree/1.0.2"
             },
-            "time": "2023-04-10T20:06:20+00:00",
-            "published-time": "2023-04-10T20:07:30+00:00"
+            "time": "2023-04-10T20:06:20+00:00"
         },
         {
             "name": "psr/http-server-middleware",
@@ -435,8 +428,7 @@
                 "issues": "https://github.com/php-fig/http-server-middleware/issues",
                 "source": "https://github.com/php-fig/http-server-middleware/tree/1.0.2"
             },
-            "time": "2023-04-11T06:14:47+00:00",
-            "published-time": "2023-04-11T06:15:22+00:00"
+            "time": "2023-04-11T06:14:47+00:00"
         }
     ],
     "aliases": [],
@@ -448,5 +440,5 @@
         "php": "^8.4"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.11.0"
+    "plugin-api-version": "2.9.0"
 }
